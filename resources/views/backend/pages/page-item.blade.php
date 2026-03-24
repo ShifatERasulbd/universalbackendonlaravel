@@ -36,6 +36,10 @@
         
         <div class="page-actions">
             @can('pages.edit')
+            <a href="{{ route('pages.builder', $page) }}" class="page-action-btn page-action-edit">
+                <span class="material-icons-round" style="font-size:0.95rem;">article</span> Edit Content
+            </a>
+
             <a href="{{ route('pages.edit', $page) }}" class="page-action-btn page-action-edit">
                 <span class="material-icons-round" style="font-size:0.95rem;">edit</span> Edit
             </a>

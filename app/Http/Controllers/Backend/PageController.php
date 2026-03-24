@@ -16,7 +16,7 @@ class PageController extends Controller implements HasMiddleware
         return [
             new Middleware('permission:pages.view', only: ['index']),
             new Middleware('permission:pages.create', only: ['create', 'store']),
-            new Middleware('permission:pages.edit', only: ['edit', 'update']),
+            new Middleware('permission:pages.edit', only: ['edit', 'update', 'editContent', 'updateContent']),
             new Middleware('permission:pages.delete', only: ['destroy']),
         ];
     }
@@ -74,6 +74,11 @@ class PageController extends Controller implements HasMiddleware
         return view('backend.pages.edit', compact('page'));
     }
 
+    public function editContent(Page $page)
+    {
+        return view('backend.pages.builder', compact('page'));
+    }
+
     public function update(Request $request, Page $page)
     {
         $validated = $request->validate([
@@ -117,6 +122,21 @@ class PageController extends Controller implements HasMiddleware
 
         return redirect()->route('pages.index')
             ->with('success', "Page \"{$title}\" deleted successfully.");
+    }
+
+    public function updateContent(Request $request, Page $page)
+    {
+        $validated = $request->validate([
+            'content' => ['nullable', 'string'],
+            'excerpt' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $validated['updated_by'] = auth()->id();
+
+        $page->update($validated);
+
+        return redirect()->route('pages.index')
+            ->with('success', "Page content for \"{$page->title}\" updated successfully.");
     }
 
     public function reorder(Request $request)
