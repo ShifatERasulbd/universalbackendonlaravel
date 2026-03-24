@@ -31,6 +31,14 @@ class PermissionSeeder extends Seeder
             'pages.create',
             'pages.edit',
             'pages.delete',
+            'available-websites.view',
+            'available-websites.create',
+            'available-websites.edit',
+            'available-websites.delete',
+            'templates.view',
+            'templates.create',
+            'templates.edit',
+            'templates.delete',
         ];
 
         foreach ($permissions as $permission) {

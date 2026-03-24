@@ -7,6 +7,8 @@ use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\MenuController;
 use App\Http\Controllers\Backend\PageController;
+use App\Http\Controllers\Backend\AvailableWebsiteController;
+use App\Http\Controllers\Backend\TemplateController;
 
 
 Route::get('/', [frontendController::class, 'index'])->name('home');
@@ -38,4 +40,12 @@ Route::middleware('auth')->group(function () {
     Route::post('admin/pages/reorder', [PageController::class, 'reorder'])->name('pages.reorder');
     Route::get('admin/pages/{page}/builder', [PageController::class, 'editContent'])->name('pages.builder');
     Route::put('admin/pages/{page}/builder', [PageController::class, 'updateContent'])->name('pages.builder.update');
+
+    // Available Websites Management
+    Route::resource('admin/available-websites', AvailableWebsiteController::class)->names('available-websites')->except('show');
+    Route::post('admin/available-websites/reorder', [AvailableWebsiteController::class, 'reorder'])->name('available-websites.reorder');
+
+    // Templates Management
+    Route::resource('admin/templates', TemplateController::class)->names('templates')->except('show');
+    Route::post('admin/templates/reorder', [TemplateController::class, 'reorder'])->name('templates.reorder');
 });

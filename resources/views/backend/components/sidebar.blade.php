@@ -40,6 +40,20 @@
             Pages
         </a>
         @endcan
+
+        @can('available-websites.view')
+        <a href="{{ route('available-websites.index') }}" class="nav-item {{ request()->routeIs('available-websites.*') ? 'active' : '' }}">
+            <span class="material-icons-round">language</span>
+            Available Websites
+        </a>
+        @endcan
+
+        <!-- @can('templates.view')
+        <a href="{{ route('templates.index') }}" class="nav-item {{ request()->routeIs('templates.*') ? 'active' : '' }}">
+            <span class="material-icons-round">view_quilt</span>
+            Templates
+        </a>
+        @endcan -->
     </nav>
 
     <div class="user-profile">

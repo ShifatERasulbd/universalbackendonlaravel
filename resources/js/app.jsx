@@ -1,9 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import Example from "./components/Example";
+import Installer from "./components/Installer";
 
 ReactDOM.createRoot(document.getElementById("app")).render(
     <React.StrictMode>
-        <Example />
+        <Installer />
     </React.StrictMode>
 );
