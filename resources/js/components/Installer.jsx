@@ -19,9 +19,25 @@ export default function Installer() {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log(formData);
+
+        try {
+            const response = await axios.post(
+                "/api/installer/step-one",
+                formData
+            );
+
+            if (response.data.status) {
+                // move to next step
+                window.location.href = "/installer/theme";
+            }
+
+        } catch (error) {
+
+            console.error(error.response?.data || error.message);
+
+        }
     };
 
     useEffect(()=>{
@@ -111,7 +127,7 @@ export default function Installer() {
                             >
                                 <option value="">Select Category</option>
                                 {categories.map((category)=>(
-                                  <option value="{category.id}">{category.name}</option>
+                                  <option key={category.id} value={category.id}>{category.name}</option>
                                 ))}
                             </select>
                         </div>
