@@ -62,9 +62,12 @@
             <h4>Alex Morgan</h4>
             <span>Super Admin</span>
         </div>
-        <button class="action-btn" style="margin-left: auto;" onclick="showToast('Logging out...', 'default')">
-            <span class="material-icons-round">logout</span>
-        </button>
+        <form action="{{ route('logout') }}" method="POST" style="margin-left: auto;">
+            @csrf
+            <button type="submit" class="action-btn" onclick="showToast('Logging out...', 'default')">
+                <span class="material-icons-round">logout</span>
+            </button>
+        </form>
     </div>
 </aside>
 

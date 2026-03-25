@@ -44,5 +44,7 @@ Route::middleware('web')->group(function () {
     Route::get('/installer/debug-step-one', [InstallerController::class, 'debugStepOne']);
     Route::get('/installer/themes', [InstallerController::class, 'getThemes']);
     Route::post('/installer/step-two', [InstallerController::class, 'storeStepTwo']);
+    Route::get('/installer/step-three', [InstallerController::class, 'getStepThreeData']);
+    Route::post('/installer/step-three', [InstallerController::class, 'storeStepThree']);
 });
 

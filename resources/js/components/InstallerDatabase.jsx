@@ -39,7 +39,7 @@ export default function InstallerDatabase() {
 			});
 
 			if (response.data.status) {
-				alert("Theme selected successfully.");
+				window.location.href = "/installer/database";
 			}
 		} catch (err) {
 			alert(err.response?.data?.message || "Theme selection failed.");
@@ -74,6 +74,7 @@ export default function InstallerDatabase() {
 		<div style={styles.wrapper}>
 			<div style={styles.card}>
 				<h2 style={styles.title}>Select Your Theme 🎨</h2>
+				<p style={styles.subtitle}>Step 2 of 3: choose the theme that best matches your website.</p>
 				<form onSubmit={handleSubmit}>
 					<div style={styles.themeGrid}>
 						{themes.map((theme) => {
@@ -107,7 +108,7 @@ export default function InstallerDatabase() {
 					</div>
 
 					<button type="submit" style={styles.button}>
-						Save Theme Selection
+						Continue to Database Setup
 					</button>
 				</form>
 			</div>
@@ -133,9 +134,15 @@ const styles = {
 	},
 	title: {
 		textAlign: "center",
-		marginBottom: "24px",
+		marginBottom: "10px",
 		fontSize: "26px",
 		fontWeight: "700",
+	},
+	subtitle: {
+		textAlign: "center",
+		marginBottom: "24px",
+		fontSize: "14px",
+		color: "#64748b",
 	},
 	themeGrid: {
 		display: "grid",

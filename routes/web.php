@@ -15,6 +15,7 @@ use App\Http\Controllers\InstallerController;
 Route::get('/', [frontendController::class, 'index'])->name('home');
 Route::get('/installer', [InstallerController::class, 'showStepOne'])->name('installer.step-one.page');
 Route::get('/installer/theme', [InstallerController::class, 'showStepTwo'])->name('installer.step-two.page');
+Route::get('/installer/database', [InstallerController::class, 'showStepThree'])->name('installer.step-three.page');
 
 // Auth routes
 Route::get('/admin/login', [AuthController::class, 'showLoginForm'])->name('login');
