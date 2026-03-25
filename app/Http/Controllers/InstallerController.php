@@ -17,7 +17,7 @@ class InstallerController extends Controller
     public function showStepOne(): View|RedirectResponse
     {
         if ($this->isInstalled()) {
-            return redirect()->route('login');
+            return redirect('/');
         }
 
         return view('home');
@@ -26,7 +26,7 @@ class InstallerController extends Controller
     public function showStepTwo(): View|RedirectResponse
     {
         if ($this->isInstalled()) {
-            return redirect()->route('login');
+            return redirect('/');
         }
 
         if (! session()->has('installer.step_one')) {
@@ -39,7 +39,7 @@ class InstallerController extends Controller
     public function showStepThree(): View|RedirectResponse
     {
         if ($this->isInstalled()) {
-            return redirect()->route('login');
+            return redirect('/');
         }
 
         if (! session()->has('installer.step_one')) {
@@ -55,11 +55,22 @@ class InstallerController extends Controller
 
     public function installationStatus(): JsonResponse
     {
-        $installed = $this->isInstalled();
+        $payload = $this->getInstallationPayload();
+        $installed = is_array($payload) && ($payload['installed'] ?? false) === true;
+
+        $businessCategory = $payload['step_one']['business_category'] ?? null;
+        $themeId = $payload['step_two']['theme_id'] ?? null;
+        $redirectTo = null;
+
+        if ($installed) {
+            $redirectTo = url('/').'?business_category='.$businessCategory.'&theme_id='.$themeId;
+        }
 
         return response()->json([
             'installed' => $installed,
-            'redirect_to' => $installed ? route('login') : null,
+            'redirect_to' => $redirectTo,
+            'business_category' => $businessCategory,
+            'theme_id' => $themeId,
         ]);
     }
 
@@ -289,7 +300,7 @@ class InstallerController extends Controller
             'status' => true,
             'message' => 'Installation completed successfully.',
             'data' => [
-                'redirect_to' => route('login'),
+                'redirect_to' => url('/').'?business_category='.session('installer.step_one.business_category').'&theme_id='.session('installer.step_two.theme_id'),
             ],
         ]);
     }
@@ -344,27 +355,39 @@ class InstallerController extends Controller
 
     private function installerLockedResponse(): ?JsonResponse
     {
-        if (! $this->isInstalled()) {
+        $payload = $this->getInstallationPayload();
+
+        if (! is_array($payload) || ($payload['installed'] ?? false) !== true) {
             return null;
         }
+
+        $businessCategory = $payload['step_one']['business_category'] ?? '';
+        $themeId = $payload['step_two']['theme_id'] ?? '';
 
         return response()->json([
             'status' => false,
             'message' => 'The application has already been installed.',
             'installed' => true,
-            'redirect_to' => route('login'),
+            'redirect_to' => url('/').'?business_category='.$businessCategory.'&theme_id='.$themeId,
         ], 403);
     }
 
     private function isInstalled(): bool
     {
+        $payload = $this->getInstallationPayload();
+
+        return is_array($payload) && ($payload['installed'] ?? false) === true;
+    }
+
+    private function getInstallationPayload(): ?array
+    {
         if (! is_file($this->installationFilePath())) {
-            return false;
+            return null;
         }
 
         $payload = json_decode((string) file_get_contents($this->installationFilePath()), true);
 
-        return is_array($payload) && ($payload['installed'] ?? false) === true;
+        return is_array($payload) ? $payload : null;
     }
 
     private function installationFilePath(): string

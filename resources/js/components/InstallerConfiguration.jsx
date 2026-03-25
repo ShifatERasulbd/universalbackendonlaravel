@@ -82,7 +82,7 @@ export default function InstallerConfiguration() {
 				setProgress(100);
 				setSuccessMessage(response.data.message);
 				await new Promise((resolve) => window.setTimeout(resolve, 800));
-				window.location.href = response.data?.data?.redirect_to || "/admin/login";
+				window.location.href = response.data?.data?.redirect_to || "/";
 			}
 		} catch (err) {
 			window.clearInterval(progressTimer);

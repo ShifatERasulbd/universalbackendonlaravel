@@ -8,27 +8,52 @@ import InstallerConfiguration from "./components/InstallerConfiguration";
 const path = window.location.pathname;
 const isStepTwo = path === "/installer/theme";
 const isStepThree = path === "/installer/database";
+const isInstallerPath = path === "/installer" || isStepTwo || isStepThree;
 
 function InstallerGuard() {
     const [checking, setChecking] = useState(true);
+    const [installedInfo, setInstalledInfo] = useState(null);
 
     useEffect(() => {
         axios.get("/api/installer/status")
             .then((response) => {
                 if (response.data?.installed) {
-                    window.location.href = response.data.redirect_to || "/admin/login";
+                    if (isInstallerPath) {
+                        window.location.href = response.data.redirect_to || "/";
+                        return;
+                    }
+
+                    const query = new URLSearchParams(window.location.search);
+
+                    setInstalledInfo({
+                        business_category: response.data?.business_category ?? query.get("business_category") ?? "N/A",
+                        theme_id: response.data?.theme_id ?? query.get("theme_id") ?? "N/A",
+                    });
                 } else {
-                    setChecking(false);
+                    setInstalledInfo(null);
                 }
+
+                setChecking(false);
             })
             .catch(() => {
-                // If the status check fails, allow the installer to render
                 setChecking(false);
             });
     }, []);
 
     if (checking) {
         return null;
+    }
+
+    if (installedInfo) {
+        return (
+            <div>
+                <div>
+                    <h2>Application Installed</h2>
+                    <p>business_category: {installedInfo.business_category}</p>
+                    <p>theme_id: {installedInfo.theme_id}</p>
+                </div>
+            </div>
+        );
     }
 
     if (isStepThree) return <InstallerConfiguration />;
