@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 // Installer
+Route::get('/installer/status', [InstallerController::class, 'installationStatus']);
 Route::get('/installer/business-categories', [InstallerController::class, 'getBusinessCategories']);
 Route::middleware('web')->group(function () {
     Route::post('/installer/step-one', [InstallerController::class, 'storeStepOne']);

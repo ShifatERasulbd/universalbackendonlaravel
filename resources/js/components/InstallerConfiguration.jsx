@@ -28,7 +28,14 @@ export default function InstallerConfiguration() {
 				});
 			})
 			.catch((err) => {
+				const redirectTo = err.response?.data?.redirect_to;
 				const message = err.response?.data?.message || "Unable to load installer configuration.";
+
+				if (redirectTo) {
+					window.location.href = redirectTo;
+					return;
+				}
+
 				setError(message);
 			})
 			.finally(() => {
@@ -73,13 +80,20 @@ export default function InstallerConfiguration() {
 			if (response.data.status) {
 				window.clearInterval(progressTimer);
 				setProgress(100);
-				await new Promise((resolve) => window.setTimeout(resolve, 350));
 				setSuccessMessage(response.data.message);
+				await new Promise((resolve) => window.setTimeout(resolve, 800));
+				window.location.href = response.data?.data?.redirect_to || "/admin/login";
 			}
 		} catch (err) {
 			window.clearInterval(progressTimer);
 			setProgress(0);
+			const redirectTo = err.response?.data?.redirect_to;
 			setError(err.response?.data?.message || "Unable to save database configuration.");
+
+			if (redirectTo) {
+				await new Promise((resolve) => window.setTimeout(resolve, 500));
+				window.location.href = redirectTo;
+			}
 		} finally {
 			window.clearInterval(progressTimer);
 			setIsSaving(false);

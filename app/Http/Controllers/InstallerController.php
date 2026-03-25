@@ -4,19 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Models\AvailableWebsite;
 use App\Models\Template;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class InstallerController extends Controller
 {
-    public function showStepOne()
+    public function showStepOne(): View|RedirectResponse
     {
+        if ($this->isInstalled()) {
+            return redirect()->route('login');
+        }
+
         return view('home');
     }
 
-    public function showStepTwo()
+    public function showStepTwo(): View|RedirectResponse
     {
+        if ($this->isInstalled()) {
+            return redirect()->route('login');
+        }
+
         if (! session()->has('installer.step_one')) {
             return redirect('/installer');
         }
@@ -24,8 +36,12 @@ class InstallerController extends Controller
         return view('home');
     }
 
-    public function showStepThree()
+    public function showStepThree(): View|RedirectResponse
     {
+        if ($this->isInstalled()) {
+            return redirect()->route('login');
+        }
+
         if (! session()->has('installer.step_one')) {
             return redirect('/installer');
         }
@@ -37,21 +53,41 @@ class InstallerController extends Controller
         return view('home');
     }
 
-    public function getBusinessCategories(){
+    public function installationStatus(): JsonResponse
+    {
+        $installed = $this->isInstalled();
+
+        return response()->json([
+            'installed' => $installed,
+            'redirect_to' => $installed ? route('login') : null,
+        ]);
+    }
+
+    public function getBusinessCategories(): JsonResponse
+    {
+        if ($response = $this->installerLockedResponse()) {
+            return $response;
+        }
+
         return response()->json(
             AvailableWebsite::where('is_active', 1)
-                ->select('id','name')
+                ->select('id', 'name')
                 ->get()
         );
     }
 
-    public function storeStepOne(Request $request){
+    public function storeStepOne(Request $request): JsonResponse
+    {
+        if ($response = $this->installerLockedResponse()) {
+            return $response;
+        }
+
         $validated = $request->validate([
-            'name'          => 'required',
-            'email'         => 'required|email',
-            'phone'         => 'required|numeric',
+            'name' => 'required',
+            'email' => 'required|email',
+            'phone' => 'required|numeric',
             'business_name' => 'required',
-            'business_url'  => 'required',
+            'business_url' => 'required',
             'business_category' => 'required',
         ]);
 
@@ -63,23 +99,30 @@ class InstallerController extends Controller
         session()->forget('installer.step_three');
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'Step 1 saved successfully',
         ]);
     }
 
-    public function debugStepOne()
+    public function debugStepOne(): JsonResponse
     {
+        if ($response = $this->installerLockedResponse()) {
+            return $response;
+        }
+
         return response()->json([
             'session_data' => session('installer.step_one'),
         ]);
     }
 
-    public function getThemes()
+    public function getThemes(): JsonResponse
     {
+        if ($response = $this->installerLockedResponse()) {
+            return $response;
+        }
+
         $stepOne = session('installer.step_one');
-           
-       
+
         if (! $stepOne) {
             return response()->json([
                 'status' => false,
@@ -101,8 +144,12 @@ class InstallerController extends Controller
         ]);
     }
 
-    public function storeStepTwo(Request $request)
+    public function storeStepTwo(Request $request): JsonResponse
     {
+        if ($response = $this->installerLockedResponse()) {
+            return $response;
+        }
+
         $stepOne = session('installer.step_one');
 
         if (! $stepOne) {
@@ -137,8 +184,12 @@ class InstallerController extends Controller
         ]);
     }
 
-    public function getStepThreeData()
+    public function getStepThreeData(): JsonResponse
     {
+        if ($response = $this->installerLockedResponse()) {
+            return $response;
+        }
+
         $stepOne = session('installer.step_one');
         $stepTwo = session('installer.step_two');
         $stepThree = session('installer.step_three', []);
@@ -169,8 +220,12 @@ class InstallerController extends Controller
         ]);
     }
 
-    public function storeStepThree(Request $request)
+    public function storeStepThree(Request $request): JsonResponse
     {
+        if ($response = $this->installerLockedResponse()) {
+            return $response;
+        }
+
         if (! session()->has('installer.step_one')) {
             return response()->json([
                 'status' => false,
@@ -206,7 +261,23 @@ class InstallerController extends Controller
                 'DB_PASSWORD' => $validated['db_password'] ?? '',
             ]);
 
+            $this->writeInstallationFile([
+                'installed' => true,
+                'installed_at' => now()->toIso8601String(),
+                'step_one' => session('installer.step_one'),
+                'step_two' => session('installer.step_two'),
+                'step_three' => [
+                    'app_name' => $validated['app_name'],
+                    'website_url' => $validated['website_url'],
+                    'db_database' => $validated['db_database'],
+                    'db_username' => $validated['db_username'],
+                ],
+            ]);
+
             Artisan::call('config:clear');
+            session()->forget('installer.step_one');
+            session()->forget('installer.step_two');
+            session()->forget('installer.step_three');
         } catch (\Throwable $exception) {
             return response()->json([
                 'status' => false,
@@ -216,8 +287,10 @@ class InstallerController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Database configuration saved and environment updated successfully.',
-            'data' => session('installer.step_three'),
+            'message' => 'Installation completed successfully.',
+            'data' => [
+                'redirect_to' => route('login'),
+            ],
         ]);
     }
 
@@ -251,6 +324,52 @@ class InstallerController extends Controller
         if (file_put_contents($environmentPath, $content) === false) {
             throw new \RuntimeException('Unable to write to the environment file.');
         }
+    }
+
+    private function writeInstallationFile(array $payload): void
+    {
+        $installationFile = $this->installationFilePath();
+        $directory = dirname($installationFile);
+
+        if (! is_dir($directory)) {
+            File::ensureDirectoryExists($directory);
+        }
+
+        $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        if ($json === false || file_put_contents($installationFile, $json) === false) {
+            throw new \RuntimeException('Unable to write the installation marker file.');
+        }
+    }
+
+    private function installerLockedResponse(): ?JsonResponse
+    {
+        if (! $this->isInstalled()) {
+            return null;
+        }
+
+        return response()->json([
+            'status' => false,
+            'message' => 'The application has already been installed.',
+            'installed' => true,
+            'redirect_to' => route('login'),
+        ], 403);
+    }
+
+    private function isInstalled(): bool
+    {
+        if (! is_file($this->installationFilePath())) {
+            return false;
+        }
+
+        $payload = json_decode((string) file_get_contents($this->installationFilePath()), true);
+
+        return is_array($payload) && ($payload['installed'] ?? false) === true;
+    }
+
+    private function installationFilePath(): string
+    {
+        return storage_path('app/installer/installed.json');
     }
 
     private function formatEnvironmentValue(?string $value): string
